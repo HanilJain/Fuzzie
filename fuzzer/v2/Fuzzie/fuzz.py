@@ -14,7 +14,7 @@ from Ctrl_frames.ControlFrames import ControlFrames
 from Data_frames.DataFrames import DataFrames
 from fuzzer_init import *
 from time import sleep
-from crash_explainer import process_all_aliveness_files
+from crash_explainer import handle_crash
 from protocol_state import ProtocolStateMachine
 
 
@@ -23,20 +23,6 @@ import settings
 import sys
 import os
 import ascii_art
-
-#Function to generate the crash report when a crash happens
-def generate_crash_report():
-    print("\n[!] Connectivity lost. Generating crash report...\n")
-    try:
-        reports = process_all_aliveness_files(provider="groq")
-        for entry in reports:
-            print("\n" + "=" * 80)
-            print(f"Report for: {entry['file']}")
-            print("=" * 80)
-            print(entry["report"])
-    except Exception as e:
-        print(f"[!] Failed to generate crash report: {e}")
-    sys.exit(0)
 
 #Initializing the Protocol State Machine
 settings.state_machine = ProtocolStateMachine()
@@ -71,7 +57,7 @@ if choice == 1:
             if settings.IP_not_alive:
                 if settings.state_machine:
                     settings.state_machine.transition("ip loss")
-                generate_crash_report()                    
+                handle_crash()               
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")
@@ -256,7 +242,7 @@ elif choice == 3:
             if settings.IP_not_alive:
                 if settings.state_machine:
                     settings.state_machine.transition("ip loss")
-                generate_crash_report()                    
+                handle_crash()                   
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")
@@ -351,7 +337,7 @@ elif choice == 4:
             if settings.IP_not_alive:
                 if settings.state_machine:
                     settings.state_machine.transition("ip loss")
-                generate_crash_report()                    
+                handle_crash()                  
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")

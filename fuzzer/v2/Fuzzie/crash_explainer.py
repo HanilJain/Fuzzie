@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -11,43 +12,41 @@ LOG_DIRECTORY = "Logs/fuzz_mngmt_frames"
 CRASH_ANALYSIS_PROMPT = """
 You are a wireless security expert specializing in 802.11, WPA2/WPA3, and Wi-Fi protocol vulnerabilities.
 
-You are given raw fuzzing logs from a WPA/802.11 management frame fuzzer.
+You are given raw fuzzing logs from a WPA/802.11 fuzzer (management, control, or data frames).
 
 The logs may include protocol state information (e.g., UNAUTHENTICATED, AUTHENTICATED, ASSOCIATED, CONNECTED, DISRUPTED).
-If state information is present, use it to reason about the crash context and explain why the failure occurring in that state is significant.
+If state information is present, you MUST use it to explain why the crash in that specific state is significant.
 
-Your job is to:
+You MUST strictly follow all formatting and length constraints below.
 
-1. Explain in clear human-readable terms:
-   - What type of frame was being sent (if identifiable)
-   - What field appears malformed
-   - Why this could cause connectivity loss or crash
-   - What class of vulnerability this likely represents 
-   - How the protocol state (if provided) affects the interpretation of this crash
-
-2. Infer what part of the Wi-Fi stack is likely affected.
-
-3. Try to correlate with known CVEs.
-If no exact match exists, say so clearly.
-
-4. Provide output in this format:
+OUTPUT FORMAT (DO NOT ADD EXTRA TEXT):
 
 ==== FUZZING CRASH REPORT ====
 
 Summary:
+- Maximum 50 words.
+- High-level overview of crash type and location.
 
 Technical Analysis:
-- Frame type:
-- Malformed field:
-- Likely root cause:
-- Vulnerability class:
-- Protocol state at crash (if available):
+- Approximately 200 words.
+- Must include quoted log snippets, frame fields, or relevant instructions (e.g., "status=200", "algo=9999").
+- Clearly explain:
+  - Frame type
+  - Malformed field
+  - Likely root cause
+  - Vulnerability class
+  - Protocol state at crash (if available)
 
 Impact:
+- Maximum 30 words.
+- Clear security implication (e.g., "Potential denial of service" or "Possible memory corruption").
 
-Possible CVE Correlation:
+CVE Correlation:
+- Provide a specific CVE ID if there is a strong match.
+- Otherwise write exactly: No match found.
 
 Confidence Level:
+- Must be exactly one of: High, Medium, or Low.
 
 ================================
 
@@ -109,3 +108,35 @@ def process_all_aliveness_files(provider: str = "groq"):
         })
 
     return reports
+
+def generate_crash_report():
+    print("\n[!] Connectivity lost. Generating crash report...\n")
+    try:
+        reports = process_all_aliveness_files(provider="groq")
+        for entry in reports:
+            print("\n" + "=" * 80)
+            print(f"Report for: {entry['file']}")
+            print("=" * 80)
+            print(entry["report"])
+    except Exception as e:
+        print(f"[!] Failed to generate crash report: {e}")
+    sys.exit(0)
+    
+def handle_crash():
+    print("\n[!] Crash detected.")
+
+    print("[A] Analyze with LLM")
+    print("[C] Close Fuzzing and Exit the program")
+
+    choice = input("Select option: ").strip().lower()
+
+    if choice == "a":
+        report = generate_crash_report()
+        print(report)
+
+    elif choice == "c":
+        print("Closing fuzzing...")
+        sys.exit(0)
+
+    else:
+        print("Invalid option.")
