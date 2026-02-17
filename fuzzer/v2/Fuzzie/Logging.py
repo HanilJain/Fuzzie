@@ -1,5 +1,6 @@
 from datetime import datetime
 import subprocess
+import settings
 
 
 class LogFiles:
@@ -25,5 +26,15 @@ class LogFiles:
     def logging_conn_loss(self, reason, write_to):
         f = open(write_to, "a")
         now = datetime.now()
-        f.write(now.strftime("%H:%M:%S") + ": " + reason)
+        
+        current_state = "UNKNOWN"
+        if settings.state_machine:
+            current_state = settings.state_machine.get_state()
+            
+        f.write(
+        now.strftime("%H:%M:%S")
+        + f" | STATE: {current_state} | "
+        + reason
+        )
+        
         f.close()
