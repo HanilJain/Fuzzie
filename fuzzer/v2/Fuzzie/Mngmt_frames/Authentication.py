@@ -94,6 +94,10 @@ class Authentication(Frame):
                                 init_logs.logging_conn_loss(f"onnectivity issues detected while sending {self.frame_name} frames with authentication algorithm: {algo}, sequence number: {seq} and status: {status}\nframe = {frame}\n\n", init_logs.is_alive_path_mngmt)
                             else:
                                 self.send_Frame(frame, self.interface)
+                                
+                                if algo==0 and seq==1 and status==0:
+                                    if settings.state_machine.get_state()=="UNAUTHENTICATED":
+                                        settings.state_machine.transition("auth_success")
         return caused_disc
 
     def fuzz_auth(self):

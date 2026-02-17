@@ -15,12 +15,16 @@ from Data_frames.DataFrames import DataFrames
 from fuzzer_init import *
 from time import sleep
 from crash_explainer import process_all_aliveness_files
+from protocol_state import ProtocolStateMachine
+
+
 import threading
 import settings
 import sys
 import os
 import ascii_art
 
+#Function to generate the crash report when a crash happens
 def generate_crash_report():
     print("\n[!] Connectivity lost. Generating crash report...\n")
     try:
@@ -33,6 +37,9 @@ def generate_crash_report():
     except Exception as e:
         print(f"[!] Failed to generate crash report: {e}")
     sys.exit(0)
+
+#Initializing the Protocol State Machine
+settings.state_machine = ProtocolStateMachine()
 
 print(ascii_art.logo)
 print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n\n')
@@ -58,10 +65,21 @@ if choice == 1:
     if mode == 'standard' or mode == 'random':
         Aliveness = AllvCheck(targeted_STA, 'fuzzing')
         Aliveness.start()
+        
+        #Block for testing state transitions
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
-                generate_crash_report()
+                if settings.state_machine:
+                    settings.state_machine.transition("ip loss")
+                generate_crash_report()                    
+                
+        if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
+            settings.state_machine.transition("assoc success")
         sleep(10)
+        
+        if settings.state_machine and settings.state_machine.get_state()=="ASSOCIATED":
+            settings.state_machine.transition("connection_established")
+            
         subprocess.call(['clear'], shell=True)
     else:
         print(bcolors.FAIL + '\nNo such mode :(' + bcolors.ENDC)
@@ -232,10 +250,21 @@ elif choice == 3:
     if mode == 'standard' or mode == 'random':
         Aliveness = AllvCheck(targeted_STA, 'fuzzing')
         Aliveness.start()
+        
+        #Block for testing statefulness
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
-                os._exit(0)
+                if settings.state_machine:
+                    settings.state_machine.transition("ip loss")
+                generate_crash_report()                    
+                
+        if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
+            settings.state_machine.transition("assoc success")
         sleep(10)
+        
+        if settings.state_machine and settings.state_machine.get_state()=="ASSOCIATED":
+            settings.state_machine.transition("connection_established")
+            
         subprocess.call(['clear'], shell=True)
     else:
         print(bcolors.FAIL + '\nNo such mode :(' + bcolors.ENDC)
@@ -316,10 +345,21 @@ elif choice == 4:
     if mode == 'standard' or mode == 'random':
         Aliveness = AllvCheck(targeted_STA, 'fuzzing')
         Aliveness.start()
+        
+        #Block for testing statefulness
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
-                os._exit(0)
+                if settings.state_machine:
+                    settings.state_machine.transition("ip loss")
+                generate_crash_report()                    
+                
+        if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
+            settings.state_machine.transition("assoc success")
         sleep(10)
+        
+        if settings.state_machine and settings.state_machine.get_state()=="ASSOCIATED":
+            settings.state_machine.transition("connection_established")
+            
         subprocess.call(['clear'], shell=True)
     else:
         print(bcolors.FAIL + '\nNo such mode :(' + bcolors.ENDC)

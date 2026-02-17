@@ -25,7 +25,15 @@ class DeauthMon(threading.Thread):
         keyword2 = "Disassociate"
         if packet.haslayer(Dot11Deauth) or keyword1 in packet.summary():
             settings.conn_loss = True
+            
+            if settings.state_machine:
+                settings.state_machine.transition("deauth")
+            
+            
         elif packet.haslayer(Dot11Disas) or keyword2 in packet.summary():
             settings.conn_loss = True
+            
+            if settings.state_machine:
+                settings.state_machine.transition("deauth")
         else:
             pass
