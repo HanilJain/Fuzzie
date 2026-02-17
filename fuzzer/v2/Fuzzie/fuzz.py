@@ -14,12 +14,25 @@ from Ctrl_frames.ControlFrames import ControlFrames
 from Data_frames.DataFrames import DataFrames
 from fuzzer_init import *
 from time import sleep
+from crash_explainer import process_all_aliveness_files
 import threading
 import settings
 import sys
 import os
 import ascii_art
 
+def generate_crash_report():
+    print("\n[!] Connectivity lost. Generating crash report...\n")
+    try:
+        reports = process_all_aliveness_files(provider="groq")
+        for entry in reports:
+            print("\n" + "=" * 80)
+            print(f"Report for: {entry['file']}")
+            print("=" * 80)
+            print(entry["report"])
+    except Exception as e:
+        print(f"[!] Failed to generate crash report: {e}")
+    sys.exit(0)
 
 print(ascii_art.logo)
 print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n\n')
@@ -47,7 +60,7 @@ if choice == 1:
         Aliveness.start()
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
-                os._exit(0)
+                generate_crash_report()
         sleep(10)
         subprocess.call(['clear'], shell=True)
     else:

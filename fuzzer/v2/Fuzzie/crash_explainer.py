@@ -1,16 +1,11 @@
 import os
-import argparse
 from dotenv import load_dotenv
-
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-# Requires python-dotenv to load environment variables for API keys, etc.
-# The Logs should be given as part of the running script, they are assumed to be stored in a folder called Logs/
-# The way to runt his python script is python crash_explainer.py LogsAliveness_check_16-02-26__17:46:55 --provider groq
-
-
 load_dotenv()
+
+LOG_DIRECTORY = "Logs/fuzz_mngmt_frames"
 
 
 CRASH_ANALYSIS_PROMPT = """
@@ -60,75 +55,52 @@ Here is the fuzzing log:
 
 
 def load_llm(provider: str = "groq"):
-    """
-    Dynamically load LLM provider.
-    """
-
     if provider == "openai":
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
-            model="gpt-4o-mini",
-            temperature=0.2,
-        )
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
 
     elif provider == "gemini":
         from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            temperature=0.2,
-        )
+        return ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2)
 
     elif provider == "groq":
         from langchain_groq import ChatGroq
-        return ChatGroq(
-            model="llama-3.3-70b-versatile",
-            temperature=0.2,
-        )
+        return ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
     else:
-        raise ValueError("Unsupported provider. Choose from: openai, gemini, groq")
+        raise ValueError("Unsupported provider.")
 
 
-def explain_crash(file_path: str, provider: str = "groq") -> str:
-    """
-    Reads a fuzz log file and returns structured crash analysis.
-    """
+def explain_crash(log_content: str, llm) -> str:
+    prompt = PromptTemplate.from_template(CRASH_ANALYSIS_PROMPT)
+    chain = prompt | llm | StrOutputParser()
+    return chain.invoke({"log_content": log_content})
 
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        log_content = f.read()
+def process_all_aliveness_files(provider: str = "groq"):
+    if not os.path.exists(LOG_DIRECTORY):
+        raise FileNotFoundError(f"Directory not found: {LOG_DIRECTORY}")
 
     llm = load_llm(provider)
 
-    prompt = PromptTemplate.from_template(CRASH_ANALYSIS_PROMPT)
+    files = sorted(os.listdir(LOG_DIRECTORY))
+    aliveness_files = [
+        f for f in files if f.startswith("Aliveness_check_")
+    ]
 
-    # Modern LCEL pipeline
-    chain = prompt | llm | StrOutputParser()
+    reports = []
 
-    result = chain.invoke({"log_content": log_content})
+    for filename in aliveness_files:
+        file_path = os.path.join(LOG_DIRECTORY, filename)
 
-    return result
+        with open(file_path, "r", encoding="utf-8") as f:
+            log_content = f.read()
 
+        report = explain_crash(log_content, llm)
 
-def main():
-    parser = argparse.ArgumentParser(description="Fuzz Crash Report Explainer")
-    parser.add_argument("file", help="Path to fuzz log .txt file")
-    parser.add_argument(
-        "--provider",
-        default="groq",
-        choices=["groq", "gemini", "openai"],
-        help="LLM provider to use",
-    )
+        reports.append({
+            "file": filename,
+            "report": report
+        })
 
-    args = parser.parse_args()
-
-    report = explain_crash(args.file, args.provider)
-
-    print("\n")
-    print(report)
-
-
-if __name__ == "__main__":
-    main()
+    return reports
