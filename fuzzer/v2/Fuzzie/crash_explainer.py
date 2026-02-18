@@ -3,13 +3,14 @@ import sys
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from log_intelligence import CrashIntelligence
 
 load_dotenv()
 
 LOG_DIRECTORIES = [
-    "Logs/mngmt_frames",
-    "Logs/ctrl_frames",
-    "Logs/Dataframes"
+    "Logs/fuzz_mngmt_frames",
+    "Logs/fuzz_ctrl_frames",
+    "Logs/fuzz_data_frames"
 ]
 
 
@@ -155,7 +156,9 @@ def handle_crash():
 
     print("[A] Analyze with LLM")
     print("[C] Close Fuzzing and Exit the program")
+    print("[L] Get Insights into the crash from the logs")
     print("[R] Resume without analysis")
+    print()
 
     choice = input("Select option: ").strip().lower()
 
@@ -166,6 +169,11 @@ def handle_crash():
     elif choice == "c":
         print("Closing fuzzing...")
         sys.exit(0)
+        
+    elif choice == 'l':
+        ci = CrashIntelligence()
+        intelligence_report = ci.analyze()
+        print(intelligence_report)
 
     elif choice == "r":
         return "resume"
