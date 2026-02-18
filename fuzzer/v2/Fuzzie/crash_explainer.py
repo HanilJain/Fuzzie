@@ -6,7 +6,11 @@ from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
-LOG_DIRECTORY = "Logs/fuzz_mngmt_frames"
+LOG_DIRECTORIES = [
+    "Logs/mngmt_frames",
+    "Logs/ctrl_frames",
+    "Logs/Dataframes"
+]
 
 
 CRASH_ANALYSIS_PROMPT = """
@@ -82,30 +86,48 @@ def explain_crash(log_content: str, llm) -> str:
 
 
 def process_all_aliveness_files(provider: str = "groq"):
-    if not os.path.exists(LOG_DIRECTORY):
-        raise FileNotFoundError(f"Directory not found: {LOG_DIRECTORY}")
 
     llm = load_llm(provider)
-
-    files = sorted(os.listdir(LOG_DIRECTORY))
-    aliveness_files = [
-        f for f in files if f.startswith("Aliveness_check_")
-    ]
-
     reports = []
 
-    for filename in aliveness_files:
-        file_path = os.path.join(LOG_DIRECTORY, filename)
+    for directory in LOG_DIRECTORIES:
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            log_content = f.read()
+        if not os.path.exists(directory):
+            continue  # Skip missing directories safely
 
-        report = explain_crash(log_content, llm)
+        files = sorted(os.listdir(directory))
 
-        reports.append({
-            "file": filename,
-            "report": report
-        })
+        aliveness_files = [
+            f for f in files if f.startswith("Aliveness_check_")
+        ]
+        
+        if not aliveness_files:
+            continue
+        
+        latest_file = max(
+            aliveness_files, key=lambda f: os.path.getmtime(os.path.join(directory, f))
+        )
+
+        for filename in aliveness_files:
+
+            file_path = os.path.join(directory, filename)
+
+            if not os.path.isfile(file_path):
+                continue
+
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    log_content = f.read()
+            except Exception:
+                continue
+
+            report = explain_crash(log_content, llm)
+
+            reports.append({
+                "directory": directory,
+                "file": filename,
+                "report": report
+            })
 
     return reports
 
@@ -113,30 +135,41 @@ def generate_crash_report():
     print("\n[!] Connectivity lost. Generating crash report...\n")
     try:
         reports = process_all_aliveness_files(provider="groq")
+
+        if not reports:
+            print("[!] No Aliveness_check logs found.")
+            return
+
         for entry in reports:
             print("\n" + "=" * 80)
-            print(f"Report for: {entry['file']}")
+            print(f"Directory: {entry['directory']}")
+            print(f"File: {entry['file']}")
             print("=" * 80)
             print(entry["report"])
+
     except Exception as e:
         print(f"[!] Failed to generate crash report: {e}")
-    sys.exit(0)
     
 def handle_crash():
     print("\n[!] Crash detected.")
 
     print("[A] Analyze with LLM")
     print("[C] Close Fuzzing and Exit the program")
+    print("[R] Resume without analysis")
 
     choice = input("Select option: ").strip().lower()
 
     if choice == "a":
-        report = generate_crash_report()
-        print(report)
+        generate_crash_report()
+        return "resume"
 
     elif choice == "c":
         print("Closing fuzzing...")
         sys.exit(0)
 
+    elif choice == "r":
+        return "resume"
+
     else:
         print("Invalid option.")
+        return "resume"

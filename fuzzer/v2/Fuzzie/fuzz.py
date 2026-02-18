@@ -14,7 +14,6 @@ from Ctrl_frames.ControlFrames import ControlFrames
 from Data_frames.DataFrames import DataFrames
 from fuzzer_init import *
 from time import sleep
-from crash_explainer import handle_crash
 from protocol_state import ProtocolStateMachine
 
 
@@ -57,7 +56,7 @@ if choice == 1:
             if settings.IP_not_alive:
                 if settings.state_machine:
                     settings.state_machine.transition("ip loss")
-                handle_crash()               
+                               
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")
@@ -241,8 +240,7 @@ elif choice == 3:
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
                 if settings.state_machine:
-                    settings.state_machine.transition("ip loss")
-                handle_crash()                   
+                    settings.state_machine.transition("ip loss")         
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")
@@ -336,8 +334,7 @@ elif choice == 4:
         while not settings.retrieving_IP:
             if settings.IP_not_alive:
                 if settings.state_machine:
-                    settings.state_machine.transition("ip loss")
-                handle_crash()                  
+                    settings.state_machine.transition("ip loss")                 
                 
         if settings.state_machine and settings.state_machine.get_state()=="AUTHENTICATED":
             settings.state_machine.transition("assoc success")

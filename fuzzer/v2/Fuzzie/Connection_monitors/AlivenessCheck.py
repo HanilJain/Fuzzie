@@ -5,6 +5,8 @@ from Msgs_colors import bcolors
 import subprocess
 import os
 
+from crash_explainer import handle_crash
+
 
 class AllvCheck(threading.Thread):
 
@@ -17,14 +19,30 @@ class AllvCheck(threading.Thread):
         ip_prefix = self.find_LAN_prefix()
         targeted_sta_IP = self.find_IP_of_STA(ip_prefix)
         if self.mode == 'fuzzing':
+        
+            crash_triggered = False
             while True:
                 sleep(1)
                 ping_Response = self.pingg(targeted_sta_IP)
+                
                 if ping_Response == 'found':
-                    pass
-                elif ping_Response == 'notfound':
+                    crash_triggered = False
+                    continue
+                
+                if ping_Response == 'notfound' and not crash_triggered:
+                    
+                    crash_triggered = True
                     settings.is_alive = False
+                    settings.conn_loss = True
+                    
                     print(f'\n{bcolors.FAIL}STA is unresponsive{bcolors.ENDC}\n')
+                    
+                    if settings.state_machine:
+                        settings.state_machine.transition('ip loss')
+                        
+                        handle_crash()
+                    
+                
                     while True:
                         input(bcolors.WARNING + 'Reconnect the STA and press Enter to resume:\n' + bcolors.ENDC)
                         if self.pingg(targeted_sta_IP) == 'found':
@@ -32,7 +50,9 @@ class AllvCheck(threading.Thread):
                             sleep(20)
                             settings.is_alive = True
                             settings.conn_loss = False
+                            crash_triggered = False
                             break
+                        
         elif self.mode == 'attacking':
             while True:
                 sleep(1)
