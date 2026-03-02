@@ -1,0 +1,68 @@
+# =========================
+# Repo-wide ignores (Windows)
+# =========================
+
+# --- OS noise ---
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Editor / IDE / Cursor ---
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+
+# --- Secrets / env files ---
+.env
+.env.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging/build
+build/
+dist/
+*.egg-info/
+*.egg
+
+# --- Go ---
+*.test
+*.out
+coverage.out
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+out/
+output/
+results/
+logs/
+
+# --- Build artifacts (root or anywhere) ---
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib

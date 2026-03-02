@@ -1,0 +1,67 @@
+
+# =========================
+# Fuzzie (fuzzer) ignores
+# =========================
+
+# --- OS noise ---
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging/build
+build/
+dist/
+*.egg-info/
+*.egg
+
+# --- Go ---
+*.test
+*.out
+coverage.out
+
+# --- Logs / temp / outputs ---
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+out/
+output/
+results/
+logs/
+
+# --- Fuzzing artifacts (common) ---
+*.pcap
+*.pcapng
+*.cap
+*.dump
+*.core
+core
+crash-*
+hang-*
